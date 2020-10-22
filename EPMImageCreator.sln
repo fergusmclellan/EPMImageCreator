@@ -9,6 +9,7 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
+		Description = DevNet APS EPM Team tool for image creation - Fergus McLellan
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{14269BC6-2562-47F7-9EC8-8BFC95E76C8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

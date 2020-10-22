@@ -25,8 +25,6 @@ namespace EPMImageCreator
             HelpForm hf = new HelpForm();
             hf.ShowDialog();
         }
-    
-
 
     public static void DrawText(String text, Font font, Color textColor, int imageWidth, int imageHeight, String path)
         {
@@ -39,19 +37,10 @@ namespace EPMImageCreator
             Image img = new Bitmap(imageWidth, imageHeight);
             Graphics drawing = Graphics.FromImage(img);
 
-            //Adjust for high quality
-            /*
-            drawing.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-            drawing.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBilinear;
-            drawing.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
-            drawing.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-            drawing.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
-            */
-
             //paint the background
             drawing.Clear(Color.White);
 
-            // draw black border, 2 pixels wide
+            // draw black border, 2 pixels wide, by drawing 4 lines around the edges
             drawing.DrawLine(new Pen(Brushes.Black, 2), new Point(1, 1), new Point(1, imageHeight-1));
             drawing.DrawLine(new Pen(Brushes.Black, 2), new Point(1, 1), new Point(imageWidth-1, 1));
             drawing.DrawLine(new Pen(Brushes.Black, 2), new Point(1, imageHeight-1), new Point(imageWidth-1, imageHeight-1));
@@ -71,12 +60,10 @@ namespace EPMImageCreator
             string[] lines = Regex.Split(text, "\r\n");
             foreach (String line in lines)
             {
-                /* Need to draw lines individually, so that can check the line text for "items" or DnD Targets
+                /* Need to "draw" each line of text individually, so that can check the line text for "items" or DnD Targets
                  * Those lines are given extra height spacing, so that token text is not squashed/cropped
                  */
-                //SizeF textWidth = new SizeF();
-                //textWidth = drawing.MeasureString(line, font, imageWidth);
-            
+
                 int textWidth = (int)(Math.Ceiling(line.Length * Globals.FontWidthSizePX)) + (2 * Globals.BorderPaddingPX);
                 float characterWidthInThisLine = line.Length * Globals.FontWidthSizePX / line.Length;
                 Match TargetMatch = TargetPattern.Match(line);
@@ -91,8 +78,7 @@ namespace EPMImageCreator
                         int boxXStartPos = Convert.ToInt32(((ItemMatch.Index + 1) * characterWidthInThisLine) + Globals.BorderPaddingPX);
                         int boxYEndPos = boxYStartPos + Globals.FontHeightSizePX + 7;
                         int boxXEndPos = Convert.ToInt32(((ItemMatch.Index + ItemMatch.Length - 0.6) * characterWidthInThisLine) + Globals.BorderPaddingPX);
-                        //MessageBox.Show(string.Format("line length: {0}, X start position: {1}", line.Length, boxXStartPos));
-
+                        
                         // For the "box" around the "item 1" text, draw 4 black lines as a rectangle, 2 pixels wide
                         drawing.DrawLine(new Pen(Brushes.Black, 2), new Point(boxXStartPos, boxYStartPos), new Point(boxXStartPos, boxYEndPos)); // left side
                         drawing.DrawLine(new Pen(Brushes.Black, 2), new Point(boxXEndPos, boxYStartPos), new Point(boxXEndPos, boxYEndPos)); // right side
@@ -102,7 +88,6 @@ namespace EPMImageCreator
                     }
 
                     textStartHeight = textStartHeight + Globals.OptionLinePaddingPX;
-                    //drawing.DrawString(line, font, textBrush, new RectangleF(Globals.BorderPaddingPX, textStartHeight, textWidth.Width, textWidth.Height), sf);
                     drawing.DrawString(line, font, textBrush, new RectangleF(Globals.BorderPaddingPX, textStartHeight, textWidth, (Globals.FontHeightSizePX + Globals.LineSpacingPX + 2)), sf);
                     textStartHeight = textStartHeight + Globals.FontHeightSizePX + Globals.LineSpacingPX + Globals.OptionLinePaddingPX;
                 }
@@ -144,20 +129,17 @@ namespace EPMImageCreator
            else
            {
                string InputText = inputCodeTextBox.Text;
-               /*int textWidthPixels;
-               textWidthPixels = findLinesAndWidth(text);
-               MessageBox.Show(string.Format("Max line length is: {0}", textWidthPixels));*/
-                //int maxWidth = 950;
+
                 var ExhibitCode = new CodeText();
                 ExhibitCode.OriginalText = InputText;
-                ExhibitCode.TargetText = "this is my target text";
+                ExhibitCode.TargetText = "";
                 
                 //first, create a dummy bitmap just to get a graphics object
                 Image img = new Bitmap(1, 1);
                 Graphics drawing = Graphics.FromImage(img);
                 Font font = new Font("Courier New", Globals.FontHeightSizePX, GraphicsUnit.Pixel);
-                //Font font = new Font("Courier New", Globals.FontSizePt, GraphicsUnit.Point); 
-                //measure the string to see how big the image needs to be
+                
+                // The Drawing MeasureString() method yields unreliable/inconsistent figures, so is not used
                 SizeF textSize = drawing.MeasureString(ExhibitCode.FinalText, font, Globals.MaxExhibitWidthPX);
 
                 Color textColor = Color.FromName("Black");
@@ -166,11 +148,10 @@ namespace EPMImageCreator
                 // Check expected width and height are below maximum allowed
                 ExhibitCode.WidthPixels = (int)(Math.Ceiling((ExhibitCode.MaxLineLength * Globals.FontWidthSizePX)) + (2 * Globals.BorderPaddingPX));
                     
-                //ExhibitCode.HeightPixels = Convert.ToInt32(textSize.Height) + (2 * Globals.BorderPaddingPX) + (ExhibitCode.NumberOfItemLines * Globals.OptionLinePaddingPX * 2) + (ExhibitCode.NumberOfTargetLines * Globals.OptionLinePaddingPX * 2);
                 ExhibitCode.HeightPixels = (ExhibitCode.NumberOfLines * (Globals.FontHeightSizePX + Globals.LineSpacingPX)) + (2 * Globals.BorderPaddingPX) + (ExhibitCode.NumberOfItemLines * Globals.OptionLinePaddingPX * 2) + (ExhibitCode.NumberOfTargetLines * Globals.OptionLinePaddingPX * 2);
                 if (ExhibitCode.WidthPixels > Globals.MaxExhibitWidthPX)
                 {
-                    // Final image too wide for stem exhibit
+                    // Error: Final image is too wide for stem exhibit
                     MessageBox.Show(string.Format("This code is too wide to generate an image equal to or less than {0} pixels.", Globals.MaxExhibitWidthPX),
                         "Too wide",
                         MessageBoxButtons.OK,
@@ -178,7 +159,7 @@ namespace EPMImageCreator
                 }
                 else if (ExhibitCode.HeightPixels > Globals.MaxExhibitHeightPX)
                 {
-                    // Final image too high for stem exhibit
+                    // Error: Final image is too high/too many lines for stem exhibit
                     MessageBox.Show(string.Format("This code has too many lines to generate an image equal to or less than {0} pixels.", Globals.MaxExhibitHeightPX),
                         "Too high",
                         MessageBoxButtons.OK,
@@ -229,20 +210,18 @@ namespace EPMImageCreator
                 Image img = new Bitmap(1, 1);
                 Graphics drawing = Graphics.FromImage(img);
                 Font font = new Font("Courier New", Globals.FontHeightSizePX, GraphicsUnit.Pixel);
-                //Font font = new Font("Courier New", Globals.FontSizePt, GraphicsUnit.Point); 
-                //measure the string to see how big the image needs to be
-                SizeF textSize = drawing.MeasureString(DnDCode.FinalText, font, Globals.MaxDnDWidthPX);
+                
+                
 
                 Color textColor = Color.FromName("Black");
                 string path = outputFileTextBox.Text;
 
                 // Check expected width and height are below maximum allowed
                 DnDCode.WidthPixels = (int)(Math.Ceiling((DnDCode.MaxLineLength * Globals.FontWidthSizePX))+ (2 * Globals.BorderPaddingPX));
-                //DnDCode.HeightPixels = Convert.ToInt32(textSize.Height) + (2 * Globals.BorderPaddingPX) + (DnDCode.NumberOfItemLines * Globals.OptionLinePaddingPX * 2) + (DnDCode.NumberOfTargetLines * Globals.OptionLinePaddingPX * 2);
                 DnDCode.HeightPixels = (DnDCode.NumberOfLines * (Globals.FontHeightSizePX + Globals.LineSpacingPX)) + (2 * Globals.BorderPaddingPX) + (DnDCode.NumberOfItemLines * Globals.OptionLinePaddingPX * 2) + (DnDCode.NumberOfTargetLines * Globals.OptionLinePaddingPX * 2);
                 if (DnDCode.WidthPixels > Globals.MaxDnDWidthPX)
                 {
-                    // Final image too wide for stem exhibit
+                    // Error: Final image is too wide for DnD area
                     MessageBox.Show(string.Format("This code is too wide to generate an image equal to or less than {0} pixels.", Globals.MaxDnDWidthPX),
                         "Too wide",
                         MessageBoxButtons.OK,
@@ -250,7 +229,7 @@ namespace EPMImageCreator
                 }
                 else if (DnDCode.HeightPixels > Globals.MaxDnDHeightPX)
                 {
-                    // Final image too high for stem exhibit
+                    // Error: Final image is too high/too many lines for DnD area
                     MessageBox.Show(string.Format("This code has too many lines to generate an image equal to or less than {0} pixels.", Globals.MaxDnDHeightPX),
                         "Too high",
                         MessageBoxButtons.OK,
@@ -376,13 +355,11 @@ namespace EPMImageCreator
                 int[] optionWidthArray = { option1Code.MaxLineLength, option2Code.MaxLineLength, option3Code.MaxLineLength, option4Code.MaxLineLength, option5Code.MaxLineLength };
                 int maxOptionWidth = optionWidthArray.Max();
                 int maxOptionWidthIndex = optionWidthArray.ToList().IndexOf(maxOptionWidth) + 1;
-                //MessageBox.Show(String.Format("Max width is {0}, as per Option {1}", maxOptionWidth, maxOptionWidthIndex));
-
+                
                 int[] optionLinesArray = { option1Code.NumberOfLines, option2Code.NumberOfLines, option3Code.NumberOfLines, option4Code.NumberOfLines, option5Code.NumberOfLines };
                 int maxOptionLines = optionLinesArray.Max();
                 int maxOptionLinesIndex = optionLinesArray.ToList().IndexOf(maxOptionLines) + 1;
-                //MessageBox.Show(String.Format("Max num of lines is {0}, as per Option {1}", maxOptionLines, maxOptionLinesIndex));
-
+                
                 int optionWidthPixels = (int)(Math.Ceiling((maxOptionWidth * Globals.FontWidthSizePX)) + (2 * Globals.BorderPaddingPX));
                 int optionHeightPixels = (maxOptionLines * (Globals.FontHeightSizePX + Globals.LineSpacingPX)) + (2 * Globals.BorderPaddingPX);
                 if (optionWidthPixels > Globals.MaxOptionWidthPX)
